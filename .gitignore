@@ -1,6 +1,13 @@
 # Prerequisites
 *.d
 
+# Visual Studio Garbage
+*.db
+/.vs
+*.user
+*.filters
+*.vcxproj
+
 # Compiled Object files
 *.slo
 *.lo
