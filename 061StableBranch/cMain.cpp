@@ -1,6 +1,9 @@
 #include "hMain.h"
 #include "cMain.h"
 #include "Offsets.h"
+#include <tlhelp32.h>
+
+
 
 //Globals
 HANDLE hProcess;
@@ -45,6 +48,24 @@ typedef struct VECTOR3
 
 }VECTOR3, *pVECTOR3;
 
+void EnableDebugPriv()
+{
+	HANDLE hToken;
+	LUID luid;
+	TOKEN_PRIVILEGES tkp;
+
+	OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken);
+
+	LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &luid);
+
+	tkp.PrivilegeCount = 1;
+	tkp.Privileges[0].Luid = luid;
+	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+	AdjustTokenPrivileges(hToken, false, &tkp, sizeof(tkp), NULL, NULL);
+
+	CloseHandle(hToken);
+}
 
 void Hook(void*)
 {
@@ -61,26 +82,45 @@ void Hook(void*)
 	freopen("CONIN$", "r", stdin);
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
-	printf("Borderlands Memory Client\n");
-	hWnd = FindWindowA(0, "Borderlands 3");
+	EnableDebugPriv();
 
-	DWORD ProcessID;
+	PROCESSENTRY32 entry;
+	entry.dwSize = sizeof(PROCESSENTRY32);
 
-	GetWindowThreadProcessId(hWnd, &ProcessID);
-	hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, ProcessID);
-	printf("hProcess: GetLastError() returned %d\n", GetLastError());
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 
-	if (hProcess)
+	if (Process32First(snapshot, &entry) == TRUE)
 	{
-		MessageBoxA(0, "Handle valid", "Success", MB_OK);
-		printf("GetLastError() returned %d\n", GetLastError());
+		while (Process32Next(snapshot, &entry) == TRUE)
+		{
+			if (stricmp(entry.szExeFile, "Borderlands3.exe") == 0)
+			{
+				HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, entry.th32ProcessID);
+
+				printf("Borderlands 3 Process ID is %d", entry.th32ProcessID);
+
+				printf("hProcess result is %p", hProcess);
+				printf("hProcess: GetLastError() returned %d\n", GetLastError());
+
+				if (hProcess)
+				{
+					MessageBoxA(0, "Handle valid", "Success", MB_OK);
+					printf("GetLastError() returned %d\n", GetLastError());
+				}
+
+				else
+				{
+					MessageBoxA(0, "Handle is not valid", "Failure", MB_OK);
+					printf("GetLastError() returned %d\n", GetLastError());
+				}
+				Sleep(5000);
+
+				CloseHandle(hProcess);
+			}
+		}
 	}
 
-	else
-	{
-		MessageBoxA(0, "Handle is not valid", "Failure", MB_OK);
-		printf("GetLastError() returned %d\n", GetLastError());
-	}
+	CloseHandle(snapshot);
 
 }
 
