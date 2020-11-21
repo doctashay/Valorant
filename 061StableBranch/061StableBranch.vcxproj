@@ -150,14 +150,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cDirectX.cpp" />
-    <ClCompile Include="cDrawings.cpp" />
     <ClCompile Include="cMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cMain.h" />
-    <ClInclude Include="hDirectX.h" />
-    <ClInclude Include="hDrawings.h" />
     <ClInclude Include="hMain.h" />
     <ClInclude Include="Offsets.h" />
   </ItemGroup>
